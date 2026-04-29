@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sembako App Pro</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #eef2f7;
+}
+
+/* HEADER */
+header {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header input {
+    width: 40%;
+    padding: 8px;
+    border-radius: 20px;
+    border: none;
+}
+
+.cart-badge {
+    background: red;
+    padding: 3px 8px;
+    border-radius: 50%;
+    font-size: 12px;
+}
+
+/* LAYOUT */
+.container {
+    display: flex;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 200px;
+    background: white;
+    padding: 15px;
+    border-right: 1px solid #ddd;
+}
+
+.sidebar h3 {
+    margin-top: 0;
+}
+
+.sidebar button {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 8px;
+    border: none;
+    background: #ecf0f1;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.sidebar button:hover {
+    background: #2ecc71;
+    color: white;
+}
+
+/* PRODUK */
+.produk {
+    flex: 3;
+    padding: 20px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    transition: 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.card h4 {
+    margin: 8px 0;
+}
+
+.price {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+button.add {
+    width: 100%;
+    margin-top: 5px;
+    background: #2ecc71;
+    border: none;
+    padding: 8px;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* CART */
+.cart {
+    width: 250px;
+    background: white;
+    padding: 15px;
+    border-left: 1px solid #ddd;
+}
+
+.cart-item {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.total {
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.checkout {
+    width: 100%;
+    padding: 10px;
+    background: #e67e22;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+/* ANIMASI */
+.fade {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h2>🛒 Sembako App</h2>
+    <input type="text" id="search" placeholder="Cari produk...">
+    <div>Cart <span class="cart-badge" id="badge">0</span></div>
+</header>
+
+<div class="container">
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h3>Kategori</h3>
+    <button onclick="filterKategori('all')">Semua</button>
+    <button onclick="filterKategori('makanan')">Makanan</button>
+    <button onclick="filterKategori('minuman')">Minuman</button>
+</div>
+
+<!-- Produk -->
+<div class="produk">
+    <div class="grid" id="produkList"></div>
+</div>
+
+<!-- Cart -->
+<div class="cart">
+    <h3>Keranjang</h3>
+    <div id="cartItems"></div>
+    <div class="total" id="total">Total: Rp 0</div>
+    <button class="checkout" onclick="checkout()">Checkout</button>
+</div>
+
+</div>
+
+<script>
+const produk = [
+{ id:1, nama:"RARA AMELIA SARI", harga:0, kategori:"makanan", gambar:"https://uploads.onecompiler.io/446nzz5ya/44mrw8zjj/download%20(4).jpg"},
+{ id:2, nama:"NIKEN TRIJA KESUMA", harga:2500000, kategori:"makanan", gambar:"https://uploads.onecompiler.io/446nzz5ya/44mrw8zjj/WhatsApp%20Image%202026-04-29%20at%2011.58.13.jpeg"},
+{ id:3, nama:"ICHA ANDIRA", harga:25000001, kategori:"makanan", gambar:"https://uploads.onecompiler.io/446nzz5ya/44mrw8zjj/WhatsApp%20Image%202026-04-29%20at%2011.59.00.jpeg"},
+{ id:4, nama:"PAKET LENGKAP", harga:5000001, kategori:"minuman", gambar:"https://uploads.onecompiler.io/446nzz5ya/44mrw8zjj/WhatsApp%20Image%202026-04-29%20at%2012.02.27.jpeg"},
+
+];
+
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+const produkList = document.getElementById("produkList");
+
+function renderProduk(data){
+    produkList.innerHTML = "";
+    data.forEach(p => {
+        const el = document.createElement("div");
+        el.className = "card fade";
+        el.innerHTML = `
+            <img src="${p.gambar}">
+            <h4>${p.nama}</h4>
+            <div class="price">Rp ${p.harga}</div>
+            <button class="add" onclick="addCart(${p.id})">+ Keranjang</button>
+        `;
+        produkList.appendChild(el);
+    });
+}
+
+function addCart(id){
+    const item = cart.find(i => i.id === id);
+    if(item){
+        item.qty++;
+    } else {
+        const p = produk.find(x => x.id === id);
+        cart.push({...p, qty:1});
+    }
+    saveCart();
+}
+
+function saveCart(){
+    localStorage.setItem("cart", JSON.stringify(cart));
+    renderCart();
+}
+
+function renderCart(){
+    const el = document.getElementById("cartItems");
+    el.innerHTML = "";
+    let total = 0;
+    let jumlah = 0;
+
+    cart.forEach(i => {
+        total += i.harga * i.qty;
+        jumlah += i.qty;
+
+        el.innerHTML += `<div class="cart-item">${i.nama} x${i.qty}</div>`;
+    });
+
+    document.getElementById("total").innerText = "Total: Rp " + total;
+    document.getElementById("badge").innerText = jumlah;
+}
+
+function checkout(){
+    if(cart.length === 0){
+        alert("Keranjang kosong!");
+        return;
+    }
+    alert("Checkout berhasil!");
+    cart = [];
+    saveCart();
+}
+
+function filterKategori(kat){
+    if(kat === "all"){
+        renderProduk(produk);
+    } else {
+        renderProduk(produk.filter(p => p.kategori === kat));
+    }
+}
+
+// SEARCH
+document.getElementById("search").addEventListener("input", e=>{
+    const val = e.target.value.toLowerCase();
+    renderProduk(produk.filter(p => p.nama.toLowerCase().includes(val)));
+});
+
+// INIT
+renderProduk(produk);
+renderCart();
+</script>
+
+</body>
+</html>
